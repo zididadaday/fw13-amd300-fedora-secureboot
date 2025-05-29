@@ -2,12 +2,30 @@
 
 ## Content
 
-- Enabling automatic decryption of your encrypted luks drive over TPM
+- Background
 - Secure Boot on Fedora
+- Enabling automatic decryption of your encrypted luks drive over TPM
 - Compiling kernel to allow for hibernation with secureboot
 - Enabling hibernation/testing hibernation
 - Other notes about installing Fedora
 - Sources
+
+## Background
+
+I have made below tests on a Framework Laptop 13 with AMD Ryzen™ AI 300 (340) from May 2025.
+Fedora installation was 42, with Secure Boot enabled. 1TB NVME drive. 64GB DDR5 5600 MHZ CL40.
+
+`https://fedoraproject.org/workstation/download/`
+
+## Secure Boot
+
+This repository should include the nescessary steps for you to run Fedora with Secure Boot and hibernation enabled, and allow you to unlock your encrypted drives with TPM 2.0, so you don't have to enter a passphrase every time you boot your computer.
+
+If you don't have secureboot enabled, you should start by enabling that, otherwise this guide will not help you.
+
+You can check to see if secureboot is enabled on Fedora with the command: `mokutil --sb-state`
+If it is enabled it will return `SecureBoot enabled`.
+
 
 ## Enabling automatic unlock of encrypted disk with TPM 2.0
 
@@ -23,17 +41,15 @@ With the commands below we are using the PCR settings 1+3+5+7+11+12+14.
 |12| kernel-config | measures the kernel command line into this PCR.|
 |14| shim-policy | The shim project measures its "MOK" certificates and hashes into this PCR.|
 
-I tested different PCR settings on my laptop, and found that I had to remove 8 and 9 because changes were constantly detected so the automatic unlock of my encrypted disk did not work.
+I tested different PCR settings on my laptop, and found that I had to remove 8 and 9 because changes were constantly detected so the automatic unlock of my encrypted disk did not work. Some guides use other combinations of PCR, I suggest you test / try to understand what you want to enable.
 
+`my main goal is to have enough security without having to enter the encryption passphrase every time I start up my laptop`
 
 ```
-# Add decryption key to tpm. 
+# Add decryption key to tpm. Note that /dev/nvme0n1p3 is the name of my disk.
 systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=1+3+5+7+11+12+14 /dev/nvme0n1p3
 
-# Wipe old keys and enroll new key. You have to execute this command again after a kernel upgrade.
-sudo systemd-cryptenroll --wipe-slot tpm2 --tpm2-device auto --tpm2-pcrs "1+3+5+7+11+12+14" /dev/nvme0n1p3
-
-# verify TPM added
+# verify TPM added (see tpm2 entry)
 sudo systemd-cryptenroll /dev/nvme0n1p3
 
 # Add tpm2 configuration option to /etc/crypttab
@@ -47,6 +63,12 @@ dracut -fv --regenerate-all
 # Reboot to test that you are no longer prompted to enter your passphrase for disk decryption.
 ```
 
+If you change something on your system and your system keeps prompting for a passphrase on boot, you can use the below command to remove the existing entry and add it once more.
+
+```
+# Wipe old keys and enroll new key. You have to execute this command again after a kernel upgrade.
+sudo systemd-cryptenroll --wipe-slot tpm2 --tpm2-device auto --tpm2-pcrs "1+3+5+7+11+12+14" /dev/nvme0n1p3
+```
 
 `https://community.frame.work/t/guide-setup-tpm2-autodecrypt/39005`
 
@@ -54,12 +76,9 @@ dracut -fv --regenerate-all
 
 `https://gist.github.com/jdoss/777e8b52c8d88eb87467935769c98a95`
 
-
-
 ### Changes that stop TPM 2.0 from unlocking encrypted disk
 
 To check what changes cause the automatic unlock from working.
-
 `sudo tpm2 pcrread`
 
 You can log a value before a reboot / update and compare the value after rebooting.
@@ -69,19 +88,9 @@ sudo tpm2 pcrread > ~/pcr_`date '+%F_%H:%M:%S'.txt`
 ```
 
 1. `new kernel`
-2. 
+2. `hardware changes`
 
-
-## Secure Boot
-
-This repository should include the nescessary steps for you to run Fedora with Secure Boot and hibernation enabled, and allow you to unlock your encrypted drives with TPM 2.0, so you don't have to enter a passphrase every time you boot your computer.
-
-If you don't have secureboot enabled, you should start by enabling that, otherwise this guide will not help you.
-
-You can check to see if secureboot is enabled on Fedora with the command: `mokutil --sb-state`
-If it is enabled it will return `SecureBoot enabled`.
-
-### Before compiling a kernel.
+## Before compiling a kernel.
 
 You need to prepare your pc so that it can sign your compiled kernel with a certificate that will work with secure boot.
 
@@ -103,7 +112,10 @@ openssl req -new -x509 -newkey rsa:2048 -keyout "key.pem" -outform DER -out "cer
 mokutil --import "cert.der"
 # You have to reboot the system after importing the key with "mokutil" to import the key via UEFI system
 # Your computer will present some screens when you reboot asking you to confirm the import.
+```
+Rebooted your computer? You can proceed with the steps below.
 
+```
 # you can check that it is added with below command, it will appear with the -subj name you gave it (?)
 mokutil --list-enrolled
 
@@ -114,13 +126,46 @@ mokutil --list-enrolled
 openssl pkcs12 -export -out key.p12 -inkey key.pem -in cert.der
 certutil -A -i cert.der -n "$name" -d /etc/pki/pesign/ -t "Pu,Pu,Pu"
 pk12util -i key.p12 -d /etc/pki/pesign
-
-
 ```
+
+You can check the key is in pesign.
+
+`certutil -L -d sql:/etc/pki/pesign/`
+
+You should see an entry with 'Pu,Pu,Pu'
+
+You can proceed with the next step.
+
 
 ### Compiling kernel to enable hibernation with secureboot
 
+In the guide on `https://community.frame.work/t/guide-fedora-36-hibernation-with-enabled-secure-boot-and-full-disk-encryption-fde-decrypting-over-tpm2/25474` the forum poster sets some variables. We will skip that, replace the code as needed.
+
+```
+### Setup build system
+rpmdev-setuptree
+koji download-build --arch=src kernel-$ver.$subver.$fedver
+rpm -Uvh kernel-$ver.$subver.$fedver.src.rpm
+cd ~/rpmbuild/SPECS
+
+### Apply patches and customize kernel configuration
+# Get patch to enable hibernate in lockdown mode (secure boot)
+wget https://gist.githubusercontent.com/kelvie/917d456cb572325aae8e3bd94a9c1350/raw/74516829883c7ee7b2216938550d55ebcb7be609/0001-Add-a-lockdown_hibernate-parameter.patch -O ~/rpmbuild/SOURCES/0001-Add-a-lockdown_hibernate-parameter.patch
+# Define patch in kernel.spec for building the rpms
+# Patch2: 0001-Add-a-lockdown_hibernate-parameter.patch
+sed -i '/^Patch999999/i Patch2: 0001-Add-a-lockdown_hibernate-parameter.patch' kernel.spec
+# Add patch as ApplyOptionalPatch
+sed -i '/^ApplyOptionalPatch linux-kernel-test.patch/i ApplyOptionalPatch 0001-Add-a-lockdown_hibernate-parameter.patch' kernel.spec
+# Add custom kernel name
+sed -i "s/# define buildid .local/%define buildid .$name/g" kernel.spec
+# Add machine owner key
+sed -i "s/.$name/.$name\n%define pe_signing_cert $name/g" kernel.spec
+# Install necessary dependencies for compiling hte kernel
+rpmbuild -bp kernel.spec
+```
+
 `sed -i "s/%define buildid \.$name/%define buildid .$name\n%define pe_signing_cert $name/g" kernel.spec`
+
 
 ### Installing the compiled kernel, update grub to allow hibernation
 
