@@ -144,13 +144,19 @@ In the guide on `https://community.frame.work/t/guide-fedora-36-hibernation-with
 ```
 ### Setup build system
 rpmdev-setuptree
-koji download-build --arch=src kernel-$ver.$subver.$fedver
-rpm -Uvh kernel-$ver.$subver.$fedver.src.rpm
+
+### check your current kernel that you want to re-compile to allow for hibernation
+uname -rv
+`<ins>6.14.8-300</ins>.fedora.<ins>fc42</ins>.x86_64 #1 SMP PREEMPT_DYNAMIC Thu May 29 17:29:18 CEST 2025`
+
+### download kernel sources - don't change the arch value, we want the src files for the build
+koji download-build --arch=src kernel-<ins>6.14.8-300.fc42</ins>
+rpm -Uvh kernel-<ins>6.14.8-300.fc42</ins>.src.rpm
 cd ~/rpmbuild/SPECS
 
 ### Apply patches and customize kernel configuration
 # Get patch to enable hibernate in lockdown mode (secure boot)
-wget https://gist.githubusercontent.com/kelvie/917d456cb572325aae8e3bd94a9c1350/raw/74516829883c7ee7b2216938550d55ebcb7be609/0001-Add-a-lockdown_hibernate-parameter.patch -O ~/rpmbuild/SOURCES/0001-Add-a-lockdown_hibernate-parameter.patch
+wget https://gist.githubusercontent.com/zididadaday/abc96cf47f95f3d36b2955363533932d/raw/50749cb9e7726d855918bd6dca0394802793ab80/0001-Add-a-lockdown_hibernate-parameter.patch -O ~/rpmbuild/SOURCES/0001-Add-a-lockdown_hibernate-parameter.patch
 # Define patch in kernel.spec for building the rpms
 # Patch2: 0001-Add-a-lockdown_hibernate-parameter.patch
 sed -i '/^Patch999999/i Patch2: 0001-Add-a-lockdown_hibernate-parameter.patch' kernel.spec
@@ -166,6 +172,8 @@ rpmbuild -bp kernel.spec
 
 `sed -i "s/%define buildid \.$name/%define buildid .$name\n%define pe_signing_cert $name/g" kernel.spec`
 
+
+`https://gist.github.com/zididadaday/abc96cf47f95f3d36b2955363533932d`
 
 ### Installing the compiled kernel, update grub to allow hibernation
 
