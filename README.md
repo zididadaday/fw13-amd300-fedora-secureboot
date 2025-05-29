@@ -35,13 +35,10 @@ I tested different PCR settings on my laptop, and found that I had to remove 8 a
 systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=1+3+5+7+11+12+14 /dev/nvme0n1p3
 
 # Wipe old keys and enroll new key. You have to execute this command again after a kernel upgrade.
-
 sudo systemd-cryptenroll --wipe-slot tpm2 --tpm2-device auto --tpm2-pcrs "1+3+5+7+11+12+14" /dev/nvme0n1p3
 
 # verify TPM added
-
 sudo systemd-cryptenroll /dev/nvme0n1p3
-
 
 # Add tpm2 configuration option to /etc/crypttab
 # discard, luks, tpm2-pcrs because it does no harm
@@ -52,7 +49,6 @@ luks-$UUID UUID=disk-$UUID none tpm2-device=auto,luks,discard,tpm2-pcrs=1+3+5+7+
 dracut -fv --regenerate-all
 
 # Reboot to test that you are no longer prompted to enter your passphrase for disk decryption.
-
 ```
 
 
@@ -72,8 +68,9 @@ To check what changes cause the automatic unlock from working.
 
 You can log a value before a reboot / update and compare the value after rebooting.
 
-`sudo tpm2 pcrread > ~/pcr_`date '+%F_%H:%M:%S'.txt``
-
+```
+sudo tpm2 pcrread > ~/pcr_`date '+%F_%H:%M:%S'.txt`
+```
 
 `new kernel`
 
