@@ -44,7 +44,7 @@ With the commands below we are using the PCR settings 1+3+5+7+11+12+14.
 
 I tested different PCR settings on my laptop, and found that I had to remove 8 and 9 because changes were constantly detected so the automatic unlock of my encrypted disk did not work. Some guides use other combinations of PCR, I suggest you test / try to understand what you want to enable.
 
-`my main goal is to have enough security without having to enter the encryption passphrase every time I start up my laptop`
+my main goal is to have enough security without having to enter the encryption passphrase every time I start up my laptop
 
 ```
 # Add decryption key to tpm. Note that /dev/nvme0n1p3 is the name of my disk.
@@ -91,11 +91,72 @@ sudo tpm2 pcrread > ~/pcr_`date '+%F_%H:%M:%S'.txt`
 1. `new kernel`
 2. `hardware changes`
 
+## Hibernation prerequisites
+
+Read on this link. It explains well what we have to do to enable hibernation on our systems.
+
+`https://gist.github.com/eloylp/b0d64d3c947dbfb23d13864e0c051c67?permalink_comment_id=3936683#gistcomment-3936683`
+
+If I have to summarize how I understand it: the default swap device on Fedora is a zram swop device. This swop partition is stored in the ram. When we hibernate, the laptop is powered off, so we need to store our swop partition on our nvme drive. Why would we want to hibernate and not just use suspend/sleep? Sometimes sleep uses more power than we want, hibernate can save power and allow us to resume working where we left off.
+
+```
+# first create the swapfile
+SWAPSIZE=$(free | awk '/Mem/ {x=$2/1024/1024; printf "%.0fG", (x<2 ? 2*x : x<8 ? 1.5*x : x) }')
+sudo btrfs subvolume create /var/swap
+sudo chattr +C /var/swap
+sudo restorecon /var/swap
+sudo mkswap --file -L SWAPFILE --size $SWAPSIZE /var/swap/swapfile
+sudo bash -c 'echo /var/swap/swapfile none swap defaults 0 0 >>/etc/fstab'
+sudo swapon -av
+sudo bash -c 'echo add_dracutmodules+=\" resume \" > /etc/dracut.conf.d/resume.conf'
+sudo dracut -f
+```
+
+Then setup the resume from hibernation scripts:
+
+
+Create file `/usr/lib/systemd/system-sleep/suspend-then-hibernate-post-suspend.sh` with content:
+```
+#!/bin/bash
+
+if [ "$1" = "post" ] && [ "$2" = "suspend-then-hibernate" ] && [ "$SYSTEMD_SLEEP_ACTION" = "suspend" ]
+then
+    echo "suspend-then-hibernate (post suspend): enabling swapfile and disabling zram"
+    /usr/sbin/swapon /swap/swapfile && /usr/sbin/swapoff /dev/zram0
+fi
+```
+Make sure it is executable `sudo chmod +x /usr/lib/systemd/system-sleep/suspend-then-hibernate-post-suspend.sh`
+
+Create service file `/etc/systemd/system/suspend-then-hibernate-resume.service`
+with content
+```
+[Unit]
+Description=Disable swapfile after resuming from hibernation during suspend-then-hibernate
+After=suspend-then-hibernate.target
+
+[Service]
+User=root
+Type=oneshot
+ExecStart=/usr/sbin/swapoff /swap/swapfile
+
+[Install]
+WantedBy=suspend-then-hibernate.target
+```
+
+Then enable it with `systemctl enable suspend-then-hibernate-resume.service`
+
+
+```
+https://fedoramagazine.org/update-on-hibernation-in-fedora-workstation/
+https://gist.github.com/eloylp/b0d64d3c947dbfb23d13864e0c051c67?permalink_comment_id=3936683#gistcomment-3936683
+```
+
+
+
 ## Before compiling a kernel.
 
-You need to prepare your pc so that it can sign your compiled kernel with a certificate that will work with secure boot.
+You need to prepare your pc so that it can sign your compiled kernel with a certificate that will work with secure boot. The steps are listed below.
 
-The steps are listed below
 Important - once you run the `mokutil` to import your key to your UEFI database, you need to reboot.
 On reboot you will be asked to confirm you want to add the key. Follow the steps listed.
 
