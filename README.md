@@ -5,6 +5,7 @@
 - Background
 - Secure Boot on Fedora
 - Enabling automatic decryption of your encrypted luks drive over TPM
+- Hibernation prerequisites
 - Compiling kernel to allow for hibernation with secureboot
 - Enabling hibernation/testing hibernation
 - Other notes about installing Fedora
@@ -143,49 +144,104 @@ In the guide on `https://community.frame.work/t/guide-fedora-36-hibernation-with
 
 ```
 ### Setup build system
+### this will setup 
 rpmdev-setuptree
+```
+The above command will setup a folder structure in ~/rpmbuild/ that prepares a build environment for you.
+Try and run `tree rpmbuild -L 2 -d` to see the structure that has been created.
 
+```
 ### check your current kernel that you want to re-compile to allow for hibernation
 uname -rv
-`<ins>6.14.8-300</ins>.fedora.<ins>fc42</ins>.x86_64 #1 SMP PREEMPT_DYNAMIC Thu May 29 17:29:18 CEST 2025`
+`6.14.8-300.fedora.fc42.x86_64 #1 SMP PREEMPT_DYNAMIC Thu May 29 17:29:18 CEST 2025`
 
 ### download kernel sources - don't change the arch value, we want the src files for the build
-koji download-build --arch=src kernel-<ins>6.14.8-300.fc42</ins>
-rpm -Uvh kernel-<ins>6.14.8-300.fc42</ins>.src.rpm
+### compare below value to your uname -rv output and adjust accordingly
+koji download-build --arch=src kernel-6.14.8-300.fc42
+rpm -Uvh kernel-6.14.8-300.fc42.src.rpm
+```
+Now your kernel sources are installed, you need to change directory and apply a patch to allow hibernation with secureboot.
+
+```
 cd ~/rpmbuild/SPECS
 
 ### Apply patches and customize kernel configuration
 # Get patch to enable hibernate in lockdown mode (secure boot)
 wget https://gist.githubusercontent.com/zididadaday/abc96cf47f95f3d36b2955363533932d/raw/50749cb9e7726d855918bd6dca0394802793ab80/0001-Add-a-lockdown_hibernate-parameter.patch -O ~/rpmbuild/SOURCES/0001-Add-a-lockdown_hibernate-parameter.patch
+
 # Define patch in kernel.spec for building the rpms
 # Patch2: 0001-Add-a-lockdown_hibernate-parameter.patch
 sed -i '/^Patch999999/i Patch2: 0001-Add-a-lockdown_hibernate-parameter.patch' kernel.spec
+
 # Add patch as ApplyOptionalPatch
 sed -i '/^ApplyOptionalPatch linux-kernel-test.patch/i ApplyOptionalPatch 0001-Add-a-lockdown_hibernate-parameter.patch' kernel.spec
+
 # Add custom kernel name
 sed -i "s/# define buildid .local/%define buildid .$name/g" kernel.spec
+
 # Add machine owner key
-sed -i "s/.$name/.$name\n%define pe_signing_cert $name/g" kernel.spec
+sed -i "s/%define buildid \.$name/%define buildid .$name\n%define pe_signing_cert $name/g" kernel.spec
+
 # Install necessary dependencies for compiling hte kernel
 rpmbuild -bp kernel.spec
 ```
 
-`sed -i "s/%define buildid \.$name/%define buildid .$name\n%define pe_signing_cert $name/g" kernel.spec`
+Now we can compile the kernel.
+
+```
+### we prefix the command with time to see how long it takes.
+### change arch to match your architecture
+time rpmbuild -bb --with baseonly --without debuginfo --target=x86_64 kernel.spec | tee ~/build-kernel_`date '+%F_%H:%M:%S'.txt`.log
+```
+
+Compilation should be succesful, otherwise check what the errors say.
 
 
 `https://gist.github.com/zididadaday/abc96cf47f95f3d36b2955363533932d`
 
-### Installing the compiled kernel, update grub to allow hibernation
+### Installing the compiled kernel, update grub to run your new kernel allowing hibernation, fixing TPM2 disk unlocking
 
+```
+cd ~/rpmbuild/RPMS/x86_64/
+sudo dnf install *.rpm
+```
 
-You can reboot, you will find your laptop is prompting you to enter the passphrase to unlock your encrypted disk. A change to your system was detected (kernel change), so you cannot automatically decrypt the disk. You need to follow the steps to wipe and re-enroll a new key.
+Now update your grub entry to include the boot parameter.
+```
+grubby --args="lockdown_hibernate=1" --update-kernel=ALL
+```
+Check that the command has added the argument to your kernels entries
+
+```
+sudo grubby --info=ALL
+```
+
+You can reboot, you will find your laptop is prompting you to enter the passphrase to unlock your encrypted disk. A change to your system was detected (kernel change), so you cannot automatically decrypt the disk. You need to follow the steps below to wipe and re-enroll a new key.
 
 `sudo systemd-cryptenroll --wipe-slot tpm2 --tpm2-device auto --tpm2-pcrs "1+3+5+7+11+12+14" /dev/nvme0n1p3`
 `dracut -fv --regenerate-all`
 
 Reboot to verify it worked.
 
+You can test that hibernation is enabled by running the below command.
+
+`systemctl status hibernate.target`
+
+Make sure you have performed the hibernate prerequsities before testing hibernation with your patched kernel.
+
+### Cleaning up your rpmbuild directory
+
+If you have installed your patched kernel and all is working, clean-up your rpmbuild directory so you are ready for the next time you need to compile a patched kernel.
+
+```
+cd ~/
+
+mv rpmbuild rpmbuild_`date '+%F_%H%M'
+```
+
 ### Compiling a new kernel version (upgrade)
+
+If your Fedora installation installs a new kernel version, your modified kernel will disappear, disabling hibernation once more and you will have to compile a new patched kernel (which you would anyhow want to do).
 
 `installing the new kernel source files`
 `checking that the kernel.spec contains the new kernel details`
