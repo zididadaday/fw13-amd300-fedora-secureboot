@@ -13,15 +13,15 @@
 
 With the commands below we are using the PCR settings 1+3+5+7+11+12+14.
 
-| PCR number | Description |
-|------------|-------------|
-|1 platform-config | Core system firmware data/host platform configuration; typically contains serial and model numbers, changes on basic hardware/CPU/RAM replacements|
-|3 external-config | Extended or pluggable firmware data; includes information about pluggable hardware|
-|5 boot-loader-config | GPT/Partition table; changes when the partitions are added, modified, or removed|
-|7 secure-boot-policy | Secure Boot state; changes when UEFI SecureBoot mode is enabled/disabled, or firmware certificates (PK, KEK, db, dbx, ...) changes.|
-|11 kernel-boot | measures the ELF kernel image, embedded initrd and other payload of the PE image it is placed in into this PCR.|
-|12 kernel-config | measures the kernel command line into this PCR.|
-|14 shim-policy | The shim project measures its "MOK" certificates and hashes into this PCR.|
+| PCR # | PCR name | Description |
+|-------|----------|-------------|
+|1| platform-config | Core system firmware data/host platform configuration; typically contains serial and model numbers, changes on basic hardware/CPU/RAM replacements|
+|3| external-config | Extended or pluggable firmware data; includes information about pluggable hardware|
+|5| boot-loader-config | GPT/Partition table; changes when the partitions are added, modified, or removed|
+|7| secure-boot-policy | Secure Boot state; changes when UEFI SecureBoot mode is enabled/disabled, or firmware certificates (PK, KEK, db, dbx, ...) changes.|
+|11| kernel-boot | measures the ELF kernel image, embedded initrd and other payload of the PE image it is placed in into this PCR.|
+|12| kernel-config | measures the kernel command line into this PCR.|
+|14| shim-policy | The shim project measures its "MOK" certificates and hashes into this PCR.|
 
 I tested different PCR settings on my laptop, and found that I had to remove 8 and 9 because changes were constantly detected so the automatic unlock of my encrypted disk did not work.
 
