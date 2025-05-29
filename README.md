@@ -151,7 +151,7 @@ https://fedoramagazine.org/update-on-hibernation-in-fedora-workstation/
 https://gist.github.com/eloylp/b0d64d3c947dbfb23d13864e0c051c67?permalink_comment_id=3936683#gistcomment-3936683
 ```
 
-
+Done. Now you can patch and build a kernel that will let you hibernate with secure boot enabled.
 
 ## Before compiling a kernel.
 
@@ -238,10 +238,10 @@ sed -i '/^Patch999999/i Patch2: 0001-Add-a-lockdown_hibernate-parameter.patch' k
 sed -i '/^ApplyOptionalPatch linux-kernel-test.patch/i ApplyOptionalPatch 0001-Add-a-lockdown_hibernate-parameter.patch' kernel.spec
 
 # Add custom kernel name
-sed -i "s/# define buildid .local/%define buildid .$name/g" kernel.spec
+sed -i "s/# define buildid .local/%define buildid .fedora/g" kernel.spec
 
 # Add machine owner key
-sed -i "s/%define buildid \.$name/%define buildid .$name\n%define pe_signing_cert $name/g" kernel.spec
+sed -i "s/%define buildid \.fedora/%define buildid .fedora\n%define pe_signing_cert fedora/g" kernel.spec
 
 # Install necessary dependencies for compiling hte kernel
 rpmbuild -bp kernel.spec
@@ -280,6 +280,7 @@ sudo grubby --info=ALL
 You can reboot, you will find your laptop is prompting you to enter the passphrase to unlock your encrypted disk. A change to your system was detected (kernel change), so you cannot automatically decrypt the disk. You need to follow the steps below to wipe and re-enroll a new key.
 
 `sudo systemd-cryptenroll --wipe-slot tpm2 --tpm2-device auto --tpm2-pcrs "1+3+5+7+11+12+14" /dev/nvme0n1p3`
+
 `dracut -fv --regenerate-all`
 
 Reboot to verify it worked.
