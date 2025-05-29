@@ -6,6 +6,7 @@
 - Secure Boot on Fedora
 - Compiling kernel to allow for hibernation with secureboot
 - Enabling hibernation/testing hibernation
+- Other notes about installing Fedora
 - Sources
 
 ## Enabling automatic unlock of encrypted disk with TPM 2.0
@@ -43,11 +44,17 @@ sudo systemd-cryptenroll /dev/nvme0n1p3
 
 
 # Add tpm2 configuration option to /etc/crypttab
+# discard, luks, tpm2-pcrs because it does no harm
+# The entry should already exist, you just have to modify the config on the line end
 luks-$UUID UUID=disk-$UUID none tpm2-device=auto,luks,discard,tpm2-pcrs=1+3+5+7+11+12+14
 
 # Update initramfs (to get necessary tpm2 libraries and parameters for decryption into initramfs)
 dracut -fv --regenerate-all
+
+# Reboot to test that you are no longer prompted to enter your passphrase for disk decryption.
+
 ```
+
 
 `https://community.frame.work/t/guide-setup-tpm2-autodecrypt/39005`
 
@@ -59,7 +66,17 @@ dracut -fv --regenerate-all
 
 ### Changes that stop TPM 2.0 from unlocking encrypted disk
 
+To check what changes cause the automatic unlock from working.
+
+`sudo tpm2 pcrread`
+
+You can log a value before a reboot / update and compare the value after rebooting.
+
+`sudo tpm2 pcrread > ~/pcr_`date '+%F_%H:%M:%S'.txt``
+
+
 `new kernel`
+
 
 
 ## Secure Boot
@@ -81,8 +98,6 @@ On reboot you will be asked to confirm you want to add the key. Follow the steps
 
 You can check if you have succesfully added the cert to your UEFI bios by running this command: `mokutil --list-enrolled`
 
-
-
 ```
 ### Custom Machine owner key for secure boot
 # add your user to /etc/pesign/users - we use editor nano to do that below
@@ -96,6 +111,9 @@ mokutil --import "cert.der"
 # You have to reboot the system after importing the key with "mokutil" to import the key via UEFI system
 # Your computer will present some screens when you reboot asking you to confirm the import.
 
+# you can check that it is added with below command, it will appear with the -subj name you gave it (?)
+mokutil --list-enrolled
+
 # After rebooting create PKCS #12 key file and import it into the nss database
 # nss database - https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/6/html/developer_guide/che-nsslib
 # nss database is 'Network Security Services (NSS) database'
@@ -103,19 +121,23 @@ mokutil --import "cert.der"
 openssl pkcs12 -export -out key.p12 -inkey key.pem -in cert.der
 certutil -A -i cert.der -n "$name" -d /etc/pki/pesign/ -t "Pu,Pu,Pu"
 pk12util -i key.p12 -d /etc/pki/pesign
+
+
 ```
 
-
-### Compiling kernel to enable secureboot
+### Compiling kernel to enable hibernation with secureboot
 
 `sed -i "s/%define buildid \.$name/%define buildid .$name\n%define pe_signing_cert $name/g" kernel.spec`
 
+### Installing the compiled kernel, update grub to allow hibernation
 
-### Installation of Fedora
 
-No special installation steps required.
-However, if you wish to use Timeshift you need to make sure your homedir are setup correctly.
-You can follow this guide:
+You can reboot, you will find your laptop is prompting you to enter the passphrase to unlock your encrypted disk. A change to your system was detected (kernel change), so you cannot automatically decrypt the disk. You need to follow the steps to wipe and re-enroll a new key.
+
+`sudo systemd-cryptenroll --wipe-slot tpm2 --tpm2-device auto --tpm2-pcrs "1+3+5+7+11+12+14" /dev/nvme0n1p3`
+`dracut -fv --regenerate-all`
+
+Reboot to verify it worked.
 
 ### Compiling a new kernel version (upgrade)
 
@@ -123,12 +145,30 @@ You can follow this guide:
 `checking that the kernel.spec contains the new kernel details`
 
 
+## Hibernation
 
-### Enabling hibernation
+You have to make some changes to get hibernation working on a secure boot setup.
+
+More explained on this link.
+
+`https://gist.github.com/eloylp/b0d64d3c947dbfb23d13864e0c051c67?permalink_comment_id=3936683#gistcomment-3936683`
+
+
+### Testing hibernation
 
 You can test hibernation with the command `systemctl hibernate`
 If it works your laptop will begin to hibernate, if it doesn't work the commandline will throw an error.
 
+#### Hibernation add-ins - menu items
+
+I wanted to add hibernate to my gnome power menu, where you can restart, sleep, shut down, log out.
+I installed the extension below after customizing it to only see the menu options I wanted to see.
+
+## Installation of Fedora
+
+No special installation steps required.
+However, if you wish to use Timeshift you need to make sure your homedir are setup correctly.
+You can follow this guide:
 
 
 ## Sources for this guide
@@ -138,3 +178,8 @@ If it works your laptop will begin to hibernate, if it doesn't work the commandl
 `https://docs.fedoraproject.org/en-US/quick-docs/kernel-build-custom/`
 
 `https://gist.github.com/kelvie/917d456cb572325aae8e3bd94a9c1350`
+
+`https://gist.github.com/eloylp/b0d64d3c947dbfb23d13864e0c051c67?permalink_comment_id=3936683#gistcomment-3936683`
+
+
+`https://community.frame.work/t/guide-setup-tpm2-autodecrypt/39005`
