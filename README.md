@@ -13,9 +13,11 @@
 
 With the commands below we are using the PCR settings 1+3+5+7+11+12+14.
 
-`1 platform-config - Core system firmware data/host platform configuration; typically contains serial and model numbers, changes on basic hardware/CPU/RAM replacements`
+| PCR number | Description |
+|------------|-------------|
+|1 platform-config | Core system firmware data/host platform configuration; typically contains serial and model numbers, changes on basic hardware/CPU/RAM replacements|
 
-`3 external-config - Extended or pluggable firmware data; includes information about pluggable hardware`
+|3 external-config | Extended or pluggable firmware data; includes information about pluggable hardware|
 
 `5 boot-loader-config - GPT/Partition table; changes when the partitions are added, modified, or removed`
 
@@ -72,8 +74,8 @@ You can log a value before a reboot / update and compare the value after rebooti
 sudo tpm2 pcrread > ~/pcr_`date '+%F_%H:%M:%S'.txt`
 ```
 
-`new kernel`
-
+1. `new kernel`
+2. 
 
 
 ## Secure Boot
