@@ -21,8 +21,10 @@ Fedora installation was 42, with Secure Boot enabled. 1TB NVME drive. 64GB DDR5 
 ## Tested with Fedora kernel versions
 
 - Fedora 6.14.6 fc42 - working
-- Fedora 6.14.8 fc 42 - not working (can it be fixed?)
-- Fedora 6.14.9 fc 42 - not working (can it be fixed?)
+- Fedora 6.14.8 fc 42 - working*
+- Fedora 6.14.9 fc 42 - working*
+
+*see additional kernel boot parameters required 
 
 ## Secure Boot
 
