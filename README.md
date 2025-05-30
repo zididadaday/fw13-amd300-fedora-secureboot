@@ -18,6 +18,12 @@ Fedora installation was 42, with Secure Boot enabled. 1TB NVME drive. 64GB DDR5 
 
 `https://fedoraproject.org/workstation/download/`
 
+## Tested with Fedora kernel versions
+
+- Fedora 6.14.6 fc42 - working
+- Fedora 6.14.8 fc 42 - not working (can it be fixed?)
+- Fedora 6.14.9 fc 42 - not working (can it be fixed?)
+
 ## Secure Boot
 
 This repository should include the nescessary steps for you to run Fedora with Secure Boot and hibernation enabled, and allow you to unlock your encrypted drives with TPM 2.0, so you don't have to enter a passphrase every time you boot your computer.
@@ -277,11 +283,34 @@ Check that the command has added the argument to your kernels entries
 sudo grubby --info=ALL
 ```
 
+** IMPORTANT FOR KERNEL 6.14.8 and 14.14.9 **
+
+```
+It seems  you need to add a resume and resume_offset entry to the kernel for hibernation to work properly
+```
+
+Run this command `sudo findmnt -no UUID -T /var/swap/swapfile` to find the UUID of the disk where you swap file is located.
+
+Then run `sudo btrfs inspect-internal map-swapfile -r /var/swap/swapfile` to find the resume_offset value.
+
+Run `sudo grubby --info=ALL` and note down the kernel path for the entry you want to update.
+
+Then  `sudo grubby --args="resume=UUID=<uuid from above> resume_offset=<offset value from above>" --update-kernel="<kernel boot path>"`
+
+Example: `sudo grubby --args="resume=UUID=591cccae-daa2-4bef-b993-33773a1f36b9 resume_offset=3202344" --update-kernel="/boot/vmlinuz-6.14.9-300.fedora.fc42.x86_64"`
+
+** END **
+
+
+Update initramfs
+`sudo dracut -fv --regenerate-all`
+
+
 You can reboot, you will find your laptop is prompting you to enter the passphrase to unlock your encrypted disk. A change to your system was detected (kernel change), so you cannot automatically decrypt the disk. You need to follow the steps below to wipe and re-enroll a new key.
 
 `sudo systemd-cryptenroll --wipe-slot tpm2 --tpm2-device auto --tpm2-pcrs "1+3+5+7+11+12+14" /dev/nvme0n1p3`
 
-`dracut -fv --regenerate-all`
+`sudo dracut -fv --regenerate-all`
 
 Reboot to verify it worked.
 
@@ -347,6 +376,8 @@ You can follow this guide:
 
 
 `https://community.frame.work/t/guide-setup-tpm2-autodecrypt/39005`
+
+`https://community.frame.work/t/guide-framework-16-hibernate-w-swapfile-setup-on-fedora-40/53080`
 
 ## Other useful commands
 
