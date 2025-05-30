@@ -283,7 +283,7 @@ Check that the command has added the argument to your kernels entries
 sudo grubby --info=ALL
 ```
 
-**-- IMPORTANT FOR KERNEL 6.14.8 and 14.14.9 --**
+**-- IMPORTANT FOR KERNEL 6.14.8 and 6.14.9 --**
 
 ```
 It seems  you need to add a resume and resume_offset entry to the kernel for hibernation to work properly
