@@ -283,7 +283,7 @@ Check that the command has added the argument to your kernels entries
 sudo grubby --info=ALL
 ```
 
-** IMPORTANT FOR KERNEL 6.14.8 and 14.14.9 **
+**-- IMPORTANT FOR KERNEL 6.14.8 and 14.14.9 --**
 
 ```
 It seems  you need to add a resume and resume_offset entry to the kernel for hibernation to work properly
@@ -299,7 +299,7 @@ Then  `sudo grubby --args="resume=UUID=<uuid from above> resume_offset=<offset v
 
 Example: `sudo grubby --args="resume=UUID=591cccae-daa2-4bef-b993-33773a1f36b9 resume_offset=3202344" --update-kernel="/boot/vmlinuz-6.14.9-300.fedora.fc42.x86_64"`
 
-** END **
+**-- END --**
 
 
 Update initramfs
