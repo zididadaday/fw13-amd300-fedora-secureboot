@@ -469,7 +469,7 @@ gnome-extensions enable hibernate-status@dromi
 
 Check the power menu for your new menu items. If you want to change the menu items, modify the schema and run make again, and copy the extension over once more.
 
-
+I think you can actually change the settings from the Extensions GUI, where you enable and disable what menu items appear.
 
 ### Testing hibernation
 
@@ -500,6 +500,11 @@ You can follow this guide:
 ## Other useful commands
 
 Show Grub menu options on boot.
-`sudo grub2-editenv - unset menu_auto_hide`
+```
+sudo grub2-editenv - unset menu_auto_hide
+```
+
 Hide Grub menu options on boot.
-`sudo grub2-editenv - set menu_auto_hide=1`
+```
+sudo grub2-editenv - set menu_auto_hide=1
+```
