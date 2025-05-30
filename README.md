@@ -347,3 +347,10 @@ You can follow this guide:
 
 
 `https://community.frame.work/t/guide-setup-tpm2-autodecrypt/39005`
+
+## Other useful commands
+
+Show Grub menu options on boot.
+`sudo grub2-editenv - unset menu_auto_hide`
+Hide Grub menu options on boot.
+`sudo grub2-editenv - set menu_auto_hide=1`
