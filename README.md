@@ -14,7 +14,7 @@
 ## Background
 
 I have made below tests on a Framework Laptop 13 with AMD Ryzen™ AI 300 (340) from May 2025.
-Fedora installation was 42, with Secure Boot enabled. 1TB NVME drive. 64GB DDR5 5600 MHZ CL40.
+Fedora installation was 42, with Secure Boot enabled. 1TB NVME drive. 64GB DDR5 5600 MHZ CL40. I have secureboot enabled, a luks encrypted drive, and hibernation working (including suspend-then-hibernation)
 
 `https://fedoraproject.org/workstation/download/`
 
@@ -52,7 +52,7 @@ With the commands below we are using the PCR settings 1+3+5+7+11+12+14.
 
 I tested different PCR settings on my laptop, and found that I had to remove 8 and 9 because changes were constantly detected so the automatic unlock of my encrypted disk did not work. Some guides use other combinations of PCR, I suggest you test / try to understand what you want to enable.
 
-my main goal is to have enough security without having to enter the encryption passphrase every time I start up my laptop
+My main goal is to have enough security without having to enter the encryption passphrase every time I start up my laptop
 
 ```
 # Add decryption key to tpm. Note that /dev/nvme0n1p3 is the name of my disk.
@@ -95,6 +95,41 @@ You can log a value before a reboot / update and compare the value after rebooti
 ```
 sudo tpm2 pcrread > ~/pcr_`date '+%F_%H:%M:%S'.txt`
 ```
+
+You will see some output like this:
+
+```
+  sha1:
+  sha256:
+    0 : 0x6D299DAFFEED8FB698510B2C39186E483629C3E4B85EBBD0A03BE88B955937CA
+    1 : 0xCFDF7448D6A43E7A93289BDC2D7FE99DB8DDD2B8FA6D1D8A87D40AD0BEB561CA
+    2 : 0x3D458CFE55CC03EA1F443F1562BEEC8DF51C75E14A9FCF9A7234A13F198E7969
+    3 : 0x3D458CFE55CC03EA1F443F1562BEEC8DF51C75E14A9FCF9A7234A13F198E7969
+    4 : 0xDD040DD582246B6D02B301898B8898749E8C0117F47B89E8B974A745B5457B31
+    5 : 0x5D7A89F7600D10396CACCC983401F7D5140445F37D609CD8A8C3C546EB10F20C
+    6 : 0x3D458CFE55CC03EA1F443F1562BEEC8DF51C75E14A9FCF9A7234A13F198E7969
+    7 : 0x0CA7BC73C39EE60B19E81B97660814580EEB9F5E21F014624DCC2DA1E30F58C5
+    8 : 0x115AD1916B0808ABFD23BAE85222F848D9623A4FA744E350EB18A3C1B892AEF8
+    9 : 0xFEF56CFA71A5BB5B54E0A7F5F86BD3C0C992EE31FF21ABDB9D53BA7E60C16D3E
+    10: 0x8DC33179261D642EEF979E3C52809F966E0D127E9D138F681095996C8EA1D07C
+    11: 0x0000000000000000000000000000000000000000000000000000000000000000
+    12: 0x0000000000000000000000000000000000000000000000000000000000000000
+    13: 0x0000000000000000000000000000000000000000000000000000000000000000
+    14: 0xF591BCC0FBDC43DAFB30FC9373677556EF21D6C2D43997839AC540DAF7EC6173
+    15: 0x0000000000000000000000000000000000000000000000000000000000000000
+    16: 0x0000000000000000000000000000000000000000000000000000000000000000
+    17: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+    18: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+    19: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+    20: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+    21: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+    22: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+    23: 0x0000000000000000000000000000000000000000000000000000000000000000
+  sha384:
+```
+
+Changes that I believe can change the PCR state.
+
 
 1. `new kernel`
 2. `hardware changes`
@@ -202,14 +237,14 @@ You can check the key is in pesign.
 
 `certutil -L -d sql:/etc/pki/pesign/`
 
-You should see an entry with 'Pu,Pu,Pu'
+You should see an entry with the text `Pu,Pu,Pu`, this is the cert you added.
 
 You can proceed with the next step.
 
 
 ### Compiling kernel to enable hibernation with secureboot
 
-In the guide on `https://community.frame.work/t/guide-fedora-36-hibernation-with-enabled-secure-boot-and-full-disk-encryption-fde-decrypting-over-tpm2/25474` the forum poster sets some variables. We will skip that, replace the code as needed.
+In the guide on `https://community.frame.work/t/guide-fedora-36-hibernation-with-enabled-secure-boot-and-full-disk-encryption-fde-decrypting-over-tpm2/25474` the forum poster sets some variables to pass as arguments in the commands he executes. We will skip that, replace the arguments as required in the commands below.
 
 ```
 ### Setup build system
@@ -251,12 +286,11 @@ sed -i "s/# define buildid .local/%define buildid .fedora/g" kernel.spec
 # Add machine owner key
 sed -i "s/%define buildid \.fedora/%define buildid .fedora\n%define pe_signing_cert fedora/g" kernel.spec
 
-# Install necessary dependencies for compiling hte kernel
+# Install necessary dependencies for compiling the kernel
 rpmbuild -bp kernel.spec
 ```
 
 Now we can compile the kernel.
-
 ```
 ### we prefix the command with time to see how long it takes.
 ### change arch to match your architecture
@@ -277,6 +311,8 @@ sudo dnf install *.rpm
 
 Now update your grub entry to include the boot parameter.
 ```
+# this will add below argument to all boot entries in grub.
+# not really needed for more than just our patched kernel, but does no harm.
 grubby --args="lockdown_hibernate=1" --update-kernel=ALL
 ```
 Check that the command has added the argument to your kernels entries
@@ -284,12 +320,16 @@ Check that the command has added the argument to your kernels entries
 ```
 sudo grubby --info=ALL
 ```
-
-**-- IMPORTANT FOR KERNEL 6.14.8 and 6.14.9 --**
-
+If you want to remove an argument from all entries, you can run below command
 ```
-It seems  you need to add a resume and resume_offset entry to the kernel for hibernation to work properly
+# this will remove the lockdown_hibernate=1 argument from all grub entries
+sudo grubby --remove-args="lockdown_hibernate=1" --update-kernel=ALL
 ```
+
+## **-- IMPORTANT FOR KERNEL 6.14.8 and 6.14.9 --**
+
+
+It seems  you need to add a resume and resume_offset entry to the kernel for hibernation to work properly. You can probably also do this for 6.14.6 if you want as well, it will not have any negative effects.
 
 Run this command `sudo findmnt -no UUID -T /var/swap/swapfile` to find the UUID of the disk where you swap file is located.
 
@@ -305,8 +345,10 @@ Example: `sudo grubby --args="resume=UUID=591cccae-daa2-4bef-b993-33773a1f36b9 r
 
 
 Update initramfs
-`sudo dracut -fv --regenerate-all`
-
+```
+# this will update the initramfs for the grubby entry for the kernel we just modified
+sudo dracut -fv
+```
 
 You can reboot, you will find your laptop is prompting you to enter the passphrase to unlock your encrypted disk. A change to your system was detected (kernel change), so you cannot automatically decrypt the disk. You need to follow the steps below to wipe and re-enroll a new key.
 
@@ -316,9 +358,11 @@ You can reboot, you will find your laptop is prompting you to enter the passphra
 
 Reboot to verify it worked.
 
-You can test that hibernation is enabled by running the below command.
+You can now test that hibernation is working by running
 
-`systemctl status hibernate.target`
+```
+systemctl hibernate
+```
 
 Make sure you have performed the hibernate prerequsities before testing hibernation with your patched kernel.
 
@@ -340,13 +384,90 @@ If your Fedora installation installs a new kernel version, your modified kernel 
 `checking that the kernel.spec contains the new kernel details`
 
 
-## Hibernation
+## Hibernation settings
 
-You have to make some changes to get hibernation working on a secure boot setup.
+Now that your computer can hibernate, you can customize a few things. We can set your computer to hibernate after it has been in standby for X amount of time, and we can add a menu option from the power action menu where you can trigger hibernation.
 
-More explained on this link.
+### Suspend then hibernate
 
-`https://gist.github.com/eloylp/b0d64d3c947dbfb23d13864e0c051c67?permalink_comment_id=3936683#gistcomment-3936683`
+`https://mitchellroe.dev/auto-hibernate.html`
+
+Modify the file `/etc/systemd/sleep.conf.d/sleep.conf`
+
+If it doesn't exist, you can create it.
+
+```
+[Sleep]
+AllowSuspend=yes
+AllowHibernation=yes
+AllowSuspendThenHibernate=yes
+HibernateMode=platform shutdown
+# you can change this delay to another number, this is in seconds
+# The amount of time the system spends in suspend mode before the system is automatically put into hibernate mode. 
+HibernateDelaySec=720
+HibernateOnACPower=yes
+```
+Modify the file `/etc/systemd/logind.conf.d/logind.conf`
+
+If it doesn't exist, you can create it.
+
+```
+[Login]
+# 3 actions, all should trigger a suspend then hibernate
+HandleSuspendKey=suspend-then-hibernate
+HandleLidSwitch=suspend-then-hibernate
+HandleLidSwitchExternalPower=suspend-then-hibernate
+```
+
+```
+https://www.freedesktop.org/software/systemd/man/latest/sleep.conf.d.html#
+https://www.freedesktop.org/software/systemd/man/latest/logind.conf.d.html#
+```
+After restarting your changes will work.
+
+### Adding hibernate options to the power menu
+
+I wanted to add hibernate to my gnome power menu, where you can restart, sleep, shut down, log out.
+I installed the extension below after customizing it to only see the menu options I wanted to see.
+
+You need to install `gnome-shell-extension-hibernate-status`. I downloaded the source, configured it and compiled it, and then put it in the Extensions path. That way I could choose my menu options.
+
+You need to install the `Extensions` add-in for Gnome.
+```
+sudo dnf install gnome-extensions-app
+```
+
+```
+# cd
+cd ~/Downloads
+
+# download the extension
+wget https://github.com/arelange/gnome-shell-extension-hibernate-status/archive/refs/heads/master.zip -O hibernate-extension.zip
+
+# unzip the extension
+unzip hibernate-extension.zip -d ~/
+
+# cd
+cd ~/gnome-shell-extension-hibernate-status-master
+
+# to modify the menu choices, you have to modify org.gnome.shell.extensions.hibernate-status-button.gschema.xml in schemas
+# change the menu items that you wish to hide's default field with false
+nano schemas/org.gnome.shell.extensions.hibernate-status-button.gschema.xml
+
+# make the extension
+cd ..
+make
+
+# make a folder for our extension
+mkdir -p ~/.local/share/gnome-shell/extensions/hibernate-status@dromi
+
+# copy over the extension
+cp -r ~/gnome-shell-extension-hibernate-status-master/* ~/.local/share/gnome-shell/extensions/hibernate-status@dromi/
+
+# enable the shell extension
+gnome-extensions enable hibernate-status@dromi
+```
+
 
 
 ### Testing hibernation
@@ -354,17 +475,11 @@ More explained on this link.
 You can test hibernation with the command `systemctl hibernate`
 If it works your laptop will begin to hibernate, if it doesn't work the commandline will throw an error.
 
-#### Hibernation add-ins - menu items
-
-I wanted to add hibernate to my gnome power menu, where you can restart, sleep, shut down, log out.
-I installed the extension below after customizing it to only see the menu options I wanted to see.
-
 ## Installation of Fedora
 
 No special installation steps required.
 However, if you wish to use Timeshift you need to make sure your homedir are setup correctly.
 You can follow this guide:
-
 
 ## Sources for this guide
 
