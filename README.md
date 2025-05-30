@@ -455,7 +455,6 @@ cd ~/gnome-shell-extension-hibernate-status-master
 nano schemas/org.gnome.shell.extensions.hibernate-status-button.gschema.xml
 
 # make the extension
-cd ..
 make
 
 # make a folder for our extension
@@ -467,6 +466,8 @@ cp -r ~/gnome-shell-extension-hibernate-status-master/* ~/.local/share/gnome-she
 # enable the shell extension
 gnome-extensions enable hibernate-status@dromi
 ```
+
+Check the power menu for your new menu items. If you want to change the menu items, modify the schema and run make again, and copy the extension over once more.
 
 
 
