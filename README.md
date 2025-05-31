@@ -155,7 +155,7 @@ sudo bash -c 'echo add_dracutmodules+=\" resume \" > /etc/dracut.conf.d/resume.c
 sudo dracut -f
 ```
 
-Then setup the resume from hibernation scripts:
+Then setup the resume from suspend-then-hibernation scripts:
 
 
 Create file `/usr/lib/systemd/system-sleep/suspend-then-hibernate-post-suspend.sh` with content:
@@ -165,7 +165,7 @@ Create file `/usr/lib/systemd/system-sleep/suspend-then-hibernate-post-suspend.s
 if [ "$1" = "post" ] && [ "$2" = "suspend-then-hibernate" ] && [ "$SYSTEMD_SLEEP_ACTION" = "suspend" ]
 then
     echo "suspend-then-hibernate (post suspend): enabling swapfile and disabling zram"
-    /usr/sbin/swapon /swap/swapfile && /usr/sbin/swapoff /dev/zram0
+    /usr/sbin/swapon /var/swap/swapfile && /usr/sbin/swapoff /dev/zram0
 fi
 ```
 Make sure it is executable `sudo chmod +x /usr/lib/systemd/system-sleep/suspend-then-hibernate-post-suspend.sh`
@@ -180,7 +180,7 @@ After=suspend-then-hibernate.target
 [Service]
 User=root
 Type=oneshot
-ExecStart=/usr/sbin/swapoff /swap/swapfile
+ExecStart=/usr/sbin/swapoff /var/swap/swapfile
 
 [Install]
 WantedBy=suspend-then-hibernate.target
@@ -378,9 +378,10 @@ mv rpmbuild rpmbuild_`date '+%F_%H%M'
 
 ### Compiling a new kernel version (upgrade)
 
-If your Fedora installation installs a new kernel version, your modified kernel will disappear, disabling hibernation once more and you will have to compile a new patched kernel (which you would anyhow want to do).
+If your Fedora installation installs a new kernel version, your patched kernel will no longer load as default, disabling hibernation once more. You can set your old kernel as default or perform the kernel patching steps for the new kernel version.
 
 `installing the new kernel source files`
+
 `checking that the kernel.spec contains the new kernel details`
 
 

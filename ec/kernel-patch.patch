@@ -1,0 +1,70 @@
+# from https://github.com/FrameworkComputer/EmbeddedController/pull/55#issuecomment-2509399773
+# by Jules-Bertholet / https://github.com/Jules-Bertholet
+# Nov 30, 2024
+
+diff --git a/drivers/hid/hid-debug.c b/drivers/hid/hid-debug.c
+index 541d682af15a..8bdf5016b50c 100644
+--- a/drivers/hid/hid-debug.c
++++ b/drivers/hid/hid-debug.c
+@@ -3349,6 +3349,7 @@ static const char *keys[KEY_MAX + 1] = {
+ 	[KEY_FN_F7] = "Fn+F7",			[KEY_FN_F8] = "Fn+F8",
+ 	[KEY_FN_F9] = "Fn+F9",			[KEY_FN_F10] = "Fn+F10",
+ 	[KEY_FN_F11] = "Fn+F11",		[KEY_FN_F12] = "Fn+F12",
++	[KEY_FNLOCK] = "FnLock",
+ 	[KEY_KBDILLUMTOGGLE] = "KbdIlluminationToggle",
+ 	[KEY_KBDILLUMDOWN] = "KbdIlluminationDown",
+ 	[KEY_KBDILLUMUP] = "KbdIlluminationUp",
+@@ -3541,7 +3542,7 @@ static const char *leds[LED_MAX + 1] = {
+ 	[LED_KANA] = "Kana",		[LED_SLEEP] = "Sleep",
+ 	[LED_SUSPEND] = "Suspend",	[LED_MUTE] = "Mute",
+ 	[LED_MISC] = "Misc",		[LED_MAIL] = "Mail",
+-	[LED_CHARGING] = "Charging",
++	[LED_CHARGING] = "Charging",	[LED_FNL] = "FnLock",
+ };
+ 
+ static const char *repeats[REP_MAX + 1] = {
+diff --git a/drivers/hid/hid-input.c b/drivers/hid/hid-input.c
+index fda9dce3da99..65d1a9b89984 100644
+--- a/drivers/hid/hid-input.c
++++ b/drivers/hid/hid-input.c
+@@ -812,6 +812,9 @@ static void hidinput_configure_usage(struct hid_input *hidinput, struct hid_fiel
+ 
+ 		if ((usage->hid & 0xf0) == 0x90) { /* SystemControl*/
+ 			switch (usage->hid & 0xf) {
++			case 0x7: map_key_clear(KEY_FN); break;
++			case 0x8: map_key_clear(KEY_FNLOCK); break;
++			case 0x9: map_led(LED_FNL); break;
+ 			case 0xb: map_key_clear(KEY_DO_NOT_DISTURB); break;
+ 			default: goto ignore;
+ 			}
+diff --git a/drivers/input/input-leds.c b/drivers/input/input-leds.c
+index 6bbf3806ea37..58bc7d581250 100644
+--- a/drivers/input/input-leds.c
++++ b/drivers/input/input-leds.c
+@@ -39,6 +39,7 @@ static const struct {
+ 	[LED_MISC]	= { "misc" },
+ 	[LED_MAIL]	= { "mail" },
+ 	[LED_CHARGING]	= { "charging" },
++	[LED_FNL]	= { "fnlock" },
+ };
+ 
+ struct input_led {
+diff --git a/include/uapi/linux/input-event-codes.h b/include/uapi/linux/input-event-codes.h
+index a4206723f503..ef86fde10baf 100644
+--- a/include/uapi/linux/input-event-codes.h
++++ b/include/uapi/linux/input-event-codes.h
+@@ -547,6 +547,7 @@
+ #define KEY_FN_S		0x1e3
+ #define KEY_FN_B		0x1e4
+ #define KEY_FN_RIGHT_SHIFT	0x1e5
++#define KEY_FNLOCK		0x1e6
+ 
+ #define KEY_BRL_DOT1		0x1f1
+ #define KEY_BRL_DOT2		0x1f2
+@@ -955,6 +956,7 @@
+ #define LED_MISC		0x08
+ #define LED_MAIL		0x09
+ #define LED_CHARGING		0x0a
++#define LED_FNL			0x0b
+ #define LED_MAX			0x0f
+ #define LED_CNT			(LED_MAX+1)
