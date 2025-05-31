@@ -163,6 +163,7 @@ Then setup the hibernation and suspend-then-hibernation scripts:
 /etc/systemd/system/hibernate-resume.service
 /etc/systemd/system/hibernate-preparation.service
 ```
+Note the path to the `swapfile` in all the scripts, `/var/swap/swapfile`, change it if it is located elsewhere for you.
 
 Create file `/usr/lib/systemd/system-sleep/suspend-then-hibernate-post-suspend.sh` with content:
 ```
