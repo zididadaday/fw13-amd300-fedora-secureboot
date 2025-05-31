@@ -155,8 +155,14 @@ sudo bash -c 'echo add_dracutmodules+=\" resume \" > /etc/dracut.conf.d/resume.c
 sudo dracut -f
 ```
 
-Then setup the resume from suspend-then-hibernation scripts:
+Then setup the hibernation and suspend-then-hibernation scripts:
 
+```
+/usr/lib/systemd/system-sleep/suspend-then-hibernate-post-suspend.sh
+/etc/systemd/system/suspend-then-hibernate-resume.service
+/etc/systemd/system/hibernate-resume.service
+/etc/systemd/system/hibernate-preparation.service
+```
 
 Create file `/usr/lib/systemd/system-sleep/suspend-then-hibernate-post-suspend.sh` with content:
 ```
@@ -187,6 +193,42 @@ WantedBy=suspend-then-hibernate.target
 ```
 
 Then enable it with `systemctl enable suspend-then-hibernate-resume.service`
+
+
+Create the file `/etc/systemd/system/hibernate-resume.service`
+
+```
+[Unit]
+Description=Disable swap after resuming from hibernation
+After=hibernate.target
+
+[Service]
+User=root
+Type=oneshot
+ExecStart=/usr/sbin/swapoff /var/swap/swapfile
+
+[Install]
+WantedBy=hibernate.target
+```
+Then enable it with `systemctl enable hibernate-resume.service`
+
+Create the file `/etc/systemd/system/hibernate-preparation.service`
+
+```
+[Unit]
+Description=Enable swap file and disable zram before hibernate
+Before=systemd-hibernate.service
+
+[Service]
+User=root
+Type=oneshot
+ExecStart=/bin/bash -c "/usr/sbin/swapon /var/swap/swapfile && /usr/sbin/swapoff /dev/zram0"
+
+[Install]
+WantedBy=systemd-hibernate.service
+```
+Then enable it with `systemctl enable hibernate-preparation.service`
+
 
 
 ```
