@@ -524,7 +524,7 @@ If it works your laptop will begin to hibernate, if it doesn't work the commandl
 
 No special installation steps required.
 However, if you wish to use Timeshift you need to make sure your homedir are setup correctly.
-You can follow this guide:
+You can follow this guide: `https://www.geeksforgeeks.org/techtips/how-to-setup-timeshift-with-btrfs-in-fedora/`
 
 ### VPN - IPSec
 
