@@ -526,6 +526,53 @@ No special installation steps required.
 However, if you wish to use Timeshift you need to make sure your homedir are setup correctly.
 You can follow this guide:
 
+### VPN - IPSec
+
+I have a pfSense firewall running that I can connect to with VPN that I setup long ago. It has worked on iOS devices and my Windows 10 laptop. Now I need to configure it on Fedora 42.
+
+Install ipsec v2 package (something about ipsec package changing name to strongswan?)
+`sudo dnf install NetworkManager-strongswan-gnome`
+
+If you are having issues with the VPN connecting, you can run `sudo journalctl -b -r | grep charon-nm` to see what error you are getting. It turns out that even though I had thought my internal CA was imported, it wasn't.
+
+To import your CA pem (internal ca) (see guides below)
+
+`https://discussion.fedoraproject.org/t/cannot-connect-to-ikev2-vpn-on-fedora-33-no-trusted-rsa-public-key-found/73547/20`
+
+
+`https://ajmaradiaga.com/Adding-trusting-CA-Fedora/`
+
+`https://www.reddit.com/r/Fedora/comments/1ar5tc9/problem_setting_up_vpn_with_ikev2_strongswan/`
+
+`https://discussion.fedoraproject.org/t/ikev2-vpn-nm-strongswan-issues-with-routing/116967/3`
+
+### force all traffic through the vpn
+
+If you run the command `ip route` you should see that there is no route (no internet access). I had to run the command below once to fix this.
+
+`sudo ip route add 0.0.0.0/1 via 172.20.10.1 dev wlp192s0`
+
+
+`resolvectl dns wlp192s0 192.168.10.1`
+`resolvectl domain wlp192s0 .local`
+
+Wrote a script to run these commands on VPN connection.
+`/etc/NetworkManager/dispatcher.d/01-vpn-dns.sh`
+
+`https://askubuntu.com/questions/1111652/network-manager-script-when-interface-up`
+
+### view heic images in Image Viewer
+
+Not really sure which command did it.
+I think the `-freeworld` one solved it.
+
+`sudo dnf install libheif-freeworld`
+
+`sudo dnf install heif-pixbuf-loader`
+
+
+
+
 ## Sources for this guide
 
 `https://community.frame.work/t/guide-fedora-36-hibernation-with-enabled-secure-boot-and-full-disk-encryption-fde-decrypting-over-tpm2/25474`
@@ -552,3 +599,8 @@ Hide Grub menu options on boot.
 ```
 sudo grub2-editenv - set menu_auto_hide=1
 ```
+
+Install package from newer Fedora
+'''
+https://stackoverflow.com/questions/24968410/install-single-package-from-rawhide
+'''

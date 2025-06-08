@@ -22,3 +22,6 @@ Tool version:  0.0.1-isolate May 30 2025 none
 ```
 
 `https://github.com/DHowett/ectool/tree/main`
+
+Keyboard tests:
+`sudo evtest /dev/input/event2`
