@@ -21,8 +21,10 @@ Fedora installation was 42, with Secure Boot enabled. 1TB NVME drive. 64GB DDR5 
 ## Tested with Fedora kernel versions
 
 - Fedora 6.14.6 fc42 - working
-- Fedora 6.14.8 fc 42 - working*
-- Fedora 6.14.9 fc 42 - working*
+- Fedora 6.14.8 fc42 - working*
+- Fedora 6.14.9 fc42 - working*
+- Fedora 6.14.11 fc42 - working
+- Fedora 6.15.2 fc42 - testing
 
 *see additional kernel boot parameters required 
 
@@ -52,7 +54,7 @@ With the commands below we are using the PCR settings 1+3+5+7+11+12+14.
 
 I tested different PCR settings on my laptop, and found that I had to remove 8 and 9 because changes were constantly detected so the automatic unlock of my encrypted disk did not work. Some guides use other combinations of PCR, I suggest you test / try to understand what you want to enable.
 
-My main goal is to have enough security without having to enter the encryption passphrase every time I start up my laptop
+My main goal is to have enough security without having to enter the encryption passphrase every time I start up my laptop. 2025-06-15: just got a secureboot update, PCR 7, 8, 9, 10 changed. 
 
 ```
 # Add decryption key to tpm. Note that /dev/nvme0n1p3 is the name of my disk.
@@ -133,6 +135,7 @@ Changes that I believe can change the PCR state.
 
 1. `new kernel`
 2. `hardware changes`
+3. `secure boot updates`
 
 ## Hibernation prerequisites
 
@@ -304,8 +307,8 @@ uname -rv
 
 ### download kernel sources - don't change the arch value, we want the src files for the build
 ### compare below value to your uname -rv output and adjust accordingly
-koji download-build --arch=src kernel-6.14.8-300.fc42
-rpm -Uvh kernel-6.14.8-300.fc42.src.rpm
+koji download-build --arch=src kernel-6.14.11-300.fc42
+rpm -Uvh kernel-6.14.11-300.fc42.src.rpm
 ```
 Now your kernel sources are installed, you need to change directory and apply a patch to allow hibernation with secureboot.
 
@@ -314,7 +317,7 @@ cd ~/rpmbuild/SPECS
 
 ### Apply patches and customize kernel configuration
 # Get patch to enable hibernate in lockdown mode (secure boot)
-wget https://gist.githubusercontent.com/zididadaday/abc96cf47f95f3d36b2955363533932d/raw/50749cb9e7726d855918bd6dca0394802793ab80/0001-Add-a-lockdown_hibernate-parameter.patch -O ~/rpmbuild/SOURCES/0001-Add-a-lockdown_hibernate-parameter.patch
+wget https://gist.githubusercontent.com/zididadaday/abc96cf47f95f3d36b2955363533932d/raw/2ca6f68414577cffb4649c3bf0494e0cfda53f14/0001-Add-a-lockdown_hibernate-parameter.patch -O ~/rpmbuild/SOURCES/0001-Add-a-lockdown_hibernate-parameter.patch
 
 # Define patch in kernel.spec for building the rpms
 # Patch2: 0001-Add-a-lockdown_hibernate-parameter.patch
@@ -323,7 +326,7 @@ sed -i '/^Patch999999/i Patch2: 0001-Add-a-lockdown_hibernate-parameter.patch' k
 # Add patch as ApplyOptionalPatch
 sed -i '/^ApplyOptionalPatch linux-kernel-test.patch/i ApplyOptionalPatch 0001-Add-a-lockdown_hibernate-parameter.patch' kernel.spec
 
-# Add custom kernel name
+# Add custom kernel name. Here we call it fedora.
 sed -i "s/# define buildid .local/%define buildid .fedora/g" kernel.spec
 
 # Add machine owner key
@@ -501,6 +504,9 @@ nano schemas/org.gnome.shell.extensions.hibernate-status-button.gschema.xml
 # make the extension
 make
 
+# compile the schema
+glib-compile-schemas schemas
+
 # make a folder for our extension
 mkdir -p ~/.local/share/gnome-shell/extensions/hibernate-status@dromi
 
@@ -601,6 +607,12 @@ sudo grub2-editenv - set menu_auto_hide=1
 ```
 
 Install package from newer Fedora
-'''
+
+```
 https://stackoverflow.com/questions/24968410/install-single-package-from-rawhide
-'''
+```
+
+Only mount network drives in /mnt on demand, disconnect when not in use
+```
+https://askubuntu.com/questions/1210867/remount-cifs-on-network-reconnect
+```
