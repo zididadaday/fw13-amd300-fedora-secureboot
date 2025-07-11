@@ -24,7 +24,9 @@ Fedora installation was 42, with Secure Boot enabled. 1TB NVME drive. 64GB DDR5 
 - Fedora 6.14.8 fc42 - working*
 - Fedora 6.14.9 fc42 - working*
 - Fedora 6.14.11 fc42 - working
-- Fedora 6.15.2 fc42 - testing
+- Fedora 6.15.3 fc42 - working
+- Fedora 6.15.4 fc42 - working
+- Fedora 6.15.5 fc42 - testing
 
 *see additional kernel boot parameters required 
 
@@ -249,7 +251,7 @@ You need to prepare your pc so that it can sign your compiled kernel with a cert
 Important - once you run the `mokutil` to import your key to your UEFI database, you need to reboot.
 On reboot you will be asked to confirm you want to add the key. Follow the steps listed.
 
-You can check if you have succesfully added the cert to your UEFI bios by running this command: `mokutil --list-enrolled`
+You can check if you have successfully added the cert to your UEFI bios by running this command: `mokutil --list-enrolled`
 
 ```
 ### Custom Machine owner key for secure boot
@@ -303,12 +305,12 @@ Try and run `tree rpmbuild -L 2 -d` to see the structure that has been created.
 ```
 ### check your current kernel that you want to re-compile to allow for hibernation
 uname -rv
-`6.14.8-300.fedora.fc42.x86_64 #1 SMP PREEMPT_DYNAMIC Thu May 29 17:29:18 CEST 2025`
+`6.15.5-200.fc42.x86_64 #1 SMP PREEMPT_DYNAMIC Sun Jul  6 09:16:17 UTC 2025`
 
 ### download kernel sources - don't change the arch value, we want the src files for the build
 ### compare below value to your uname -rv output and adjust accordingly
-koji download-build --arch=src kernel-6.14.11-300.fc42
-rpm -Uvh kernel-6.14.11-300.fc42.src.rpm
+koji download-build --arch=src kernel-6.15.5-200.fc42
+rpm -Uvh kernel-6.15.5-200.fc42.src.rpm
 ```
 Now your kernel sources are installed, you need to change directory and apply a patch to allow hibernation with secureboot.
 
@@ -317,7 +319,7 @@ cd ~/rpmbuild/SPECS
 
 ### Apply patches and customize kernel configuration
 # Get patch to enable hibernate in lockdown mode (secure boot)
-wget https://gist.githubusercontent.com/zididadaday/abc96cf47f95f3d36b2955363533932d/raw/2ca6f68414577cffb4649c3bf0494e0cfda53f14/0001-Add-a-lockdown_hibernate-parameter.patch -O ~/rpmbuild/SOURCES/0001-Add-a-lockdown_hibernate-parameter.patch
+wget https://gist.githubusercontent.com/zididadaday/abc96cf47f95f3d36b2955363533932d/raw/eeb64ad6cfc081ff07e364c237d427b4aff1f6e5/0001-Add-a-lockdown_hibernate-parameter.patch -O ~/rpmbuild/SOURCES/0001-Add-a-lockdown_hibernate-parameter.patch
 
 # Define patch in kernel.spec for building the rpms
 # Patch2: 0001-Add-a-lockdown_hibernate-parameter.patch
@@ -343,7 +345,7 @@ Now we can compile the kernel.
 time rpmbuild -bb --with baseonly --without debuginfo --target=x86_64 kernel.spec | tee ~/build-kernel_`date '+%F_%H:%M:%S'.txt`.log
 ```
 
-Compilation should be succesful, otherwise check what the errors say.
+Compilation should be successful, otherwise check what the errors say.
 
 
 `https://gist.github.com/zididadaday/abc96cf47f95f3d36b2955363533932d`
