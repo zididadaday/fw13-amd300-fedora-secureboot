@@ -319,7 +319,7 @@ cd ~/rpmbuild/SPECS
 
 ### Apply patches and customize kernel configuration
 # Get patch to enable hibernate in lockdown mode (secure boot)
-wget https://gist.githubusercontent.com/zididadaday/abc96cf47f95f3d36b2955363533932d/raw/eeb64ad6cfc081ff07e364c237d427b4aff1f6e5/0001-Add-a-lockdown_hibernate-parameter.patch -O ~/rpmbuild/SOURCES/0001-Add-a-lockdown_hibernate-parameter.patch
+wget https://gist.githubusercontent.com/zididadaday/abc96cf47f95f3d36b2955363533932d/raw/115801a543f0d23bd227ec600981eb730b91063c/0001-Add-a-lockdown_hibernate-parameter.patch -O ~/rpmbuild/SOURCES/0001-Add-a-lockdown_hibernate-parameter.patch
 
 # Define patch in kernel.spec for building the rpms
 # Patch2: 0001-Add-a-lockdown_hibernate-parameter.patch
