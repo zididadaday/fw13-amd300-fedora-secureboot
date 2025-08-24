@@ -26,7 +26,8 @@ Fedora installation was 42, with Secure Boot enabled. 1TB NVME drive. 64GB DDR5 
 - Fedora 6.14.11 fc42 - working
 - Fedora 6.15.3 fc42 - working
 - Fedora 6.15.4 fc42 - working
-- Fedora 6.15.5 fc42 - testing
+- Fedora 6.15.5 fc42 - working
+- Fedora 6.15.10 fc42 - testing
 
 *see additional kernel boot parameters required 
 
@@ -305,12 +306,12 @@ Try and run `tree rpmbuild -L 2 -d` to see the structure that has been created.
 ```
 ### check your current kernel that you want to re-compile to allow for hibernation
 uname -rv
-`6.15.5-200.fc42.x86_64 #1 SMP PREEMPT_DYNAMIC Sun Jul  6 09:16:17 UTC 2025`
+`6.15.10-200.fc42.x86_64 #1 SMP PREEMPT_DYNAMIC Fri Aug 15 15:57:06 UTC 2025`
 
 ### download kernel sources - don't change the arch value, we want the src files for the build
 ### compare below value to your uname -rv output and adjust accordingly
-koji download-build --arch=src kernel-6.15.5-200.fc42
-rpm -Uvh kernel-6.15.5-200.fc42.src.rpm
+koji download-build --arch=src kernel-6.15.10-200.fc42
+rpm -Uvh kernel-6.15.10-200.fc42.src.rpm
 ```
 Now your kernel sources are installed, you need to change directory and apply a patch to allow hibernation with secureboot.
 
