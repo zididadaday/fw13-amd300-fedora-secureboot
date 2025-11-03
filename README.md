@@ -29,8 +29,8 @@ Fedora installation was 42, with Secure Boot enabled. 1TB NVME drive. 64GB DDR5 
 - Fedora 6.15.5 fc42 - working
 - Fedora 6.15.10 fc42 - working
 - Fedora 6.16.12 fc42 - working
-- Fedora 6.17.5 fc42 - testing
-
+- Fedora 6.17.5 fc42 - working
+- Fedora 6.17.6 fc43 - testing
 *see additional kernel boot parameters required 
 
 ## Secure Boot
@@ -312,8 +312,8 @@ uname -rv
 
 ### download kernel sources - don't change the arch value, we want the src files for the build
 ### compare below value to your uname -rv output and adjust accordingly
-koji download-build --arch=src kernel-6.17.5-200.fc42
-rpm -Uvh kernel-6.17.5-200.fc42.src.rpm
+koji download-build --arch=src kernel-6.17.6-300.fc43
+rpm -Uvh kernel-6.17.6-300.fc43.src.rpm
 ```
 Now your kernel sources are installed, you need to change directory and apply a patch to allow hibernation with secureboot.
 
