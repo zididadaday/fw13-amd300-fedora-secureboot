@@ -30,7 +30,10 @@ Fedora installation was 42, with Secure Boot enabled. 1TB NVME drive. 64GB DDR5 
 - Fedora 6.15.10 fc42 - working
 - Fedora 6.16.12 fc42 - working
 - Fedora 6.17.5 fc42 - working
-- Fedora 6.17.6 fc43 - testing
+- Fedora 6.17.6 fc43 - working
+- Fedora 6.17.10 fc43 - hibernate not working, broken with VPE change
+- Fedora 6.17.12 fc43 - hibernate not working, broken with VPE change, revert change with this patch https://lore.kernel.org/amd-gfx/20251130014631.29755-1-superm1@kernel.org/
+- Fedora 6.18.3 fc43 - testing
 *see additional kernel boot parameters required 
 
 ## Secure Boot
