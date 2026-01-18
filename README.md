@@ -33,7 +33,9 @@ Fedora installation was 42, with Secure Boot enabled. 1TB NVME drive. 64GB DDR5 
 - Fedora 6.17.6 fc43 - working
 - Fedora 6.17.10 fc43 - hibernate not working, broken with VPE change
 - Fedora 6.17.12 fc43 - hibernate not working, broken with VPE change, revert change with this patch https://lore.kernel.org/amd-gfx/20251130014631.29755-1-superm1@kernel.org/
-- Fedora 6.18.3 fc43 - testing
+- Fedora 6.18.3 fc43 - testing - not working
+- Fedora 6.18.4 fc43 - VPE change reverted, working again.
+- Fedora 6.18.5 fc43 - works.
 *see additional kernel boot parameters required 
 
 ## Secure Boot
@@ -311,12 +313,12 @@ Try and run `tree rpmbuild -L 2 -d` to see the structure that has been created.
 ```
 ### check your current kernel that you want to re-compile to allow for hibernation
 uname -rv
-`6.16.12-200.fedora.fc42.x86_64 #1 SMP PREEMPT_DYNAMIC Mon Oct 20 19:36:39 CEST 2025`
+`6.18.5-200.fedora.fc43.x86_64 #1 SMP PREEMPT_DYNAMIC Sat Jan 17 19:34:45 CET 2026`
 
 ### download kernel sources - don't change the arch value, we want the src files for the build
 ### compare below value to your uname -rv output and adjust accordingly
-koji download-build --arch=src kernel-6.17.6-300.fc43
-rpm -Uvh kernel-6.17.6-300.fc43.src.rpm
+koji download-build --arch=src kernel-6.18.5-200.fc43
+rpm -Uvh kernel-6.18.5-200.fc43.src.rpm
 ```
 Now your kernel sources are installed, you need to change directory and apply a patch to allow hibernation with secureboot.
 
