@@ -36,6 +36,7 @@ Fedora installation was 42, with Secure Boot enabled. 1TB NVME drive. 64GB DDR5 
 - Fedora 6.18.3 fc43 - testing - not working
 - Fedora 6.18.4 fc43 - VPE change reverted, working again.
 - Fedora 6.18.5 fc43 - works.
+
 *see additional kernel boot parameters required 
 
 ## Secure Boot
